@@ -94,4 +94,4 @@ rm /var/log/user_management.log
 rm /var/secure/user_passwords.txt
 ```
 
-More details on how the script works can be found on this [article]('https://cliffordmapesa.hashnode.dev/automating-user-and-group-management-with-bash-script')
+More details on how the script works can be found on this [article](https://cliffordmapesa.hashnode.dev/automating-user-and-group-management-with-bash-script)
