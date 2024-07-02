@@ -15,8 +15,8 @@ docker run -it --name user-management-test ubuntu:latest /bin/bash
 Inside the container, install necessary tools:
 
 ```bash
-apt-get update
-apt-get install -y sudo openssl
+sudo apt-get update
+sudo apt-get install -y sudo openssl
 ```
 
 ## **Prepare the Input File**
@@ -31,21 +31,13 @@ mayowa; dev,www-data
 EOF
 ```
 
-## **Create Necessary Directories**
-
-Create directories for logs and secure password storage.
-
-```
-mkdir -p /var/log /var/secure
-```
-
 ## **Run the Script**
 
 Make the script executable and run it.
 
 ```bash
 chmod +x create_users.sh
-./create_users.sh
+sudo bash create_user.sh <name-of-text-file>
 ```
 
 ## **Verify the Output**
@@ -72,7 +64,7 @@ chmod +x create_users.sh
 
 - **Existing Users/Groups**: Run the script again to see how it handles existing users/groups.
   ```bash
-  ./create_users.sh
+  sudo bash create_user.sh <name-of-text-file>
   ```
   Check the log file for appropriate error messages.
 
@@ -84,8 +76,6 @@ After testing, you may want to clean up the test environment:
 userdel -r light
 userdel -r idimma
 userdel -r mayowa
-groupdel sudo
-groupdel dev
 groupdel www-data
 groupdel light
 groupdel idimma

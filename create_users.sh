@@ -1,5 +1,7 @@
 #!/bin/bash
 
+mkdir -p /var/log /var/secure
+
 LOG_FILE="/var/log/user_management.log"
 PASSWORD_FILE="/var/secure/user_passwords.txt"
 
@@ -48,7 +50,7 @@ create_user() {
 }
 
 # Main script starts here
-input_file="employees.txt"
+input_file="$1"
 
 if [ ! -f "$input_file" ]; then
     echo "Error: Input file $input_file not found." >&2
