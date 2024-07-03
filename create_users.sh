@@ -10,43 +10,48 @@ create_user() {
   local username=$1
   local groups=$2
 
-  # Check if user already exists
-  if id "$username" &>/dev/null; then
-    echo "User $username alreay exists. Skipping." | tee -a "$LOG_FILE"
-    return 1
-  fi
-
   # Create personal group if it doesn't exist
   if ! getent group "$username" &>/dev/null; then
     groupadd "$username"
     echo "Created group $username." | tee -a "$LOG_FILE"
   fi
 
-  # Create user with personal group
-  useradd -m -g "$username" "$username"
-  echo "Created group $username." | tee -a "$LOG_FILE"
+  # Check if user already exists
+  if id "$username" &>/dev/null; then
+    echo "User '$username' exists" | tee -a "$LOG_FILE"
+  else
+    # Create user with personal group
+    useradd -m -g "$username" "$username"
+    echo "Created user $username with group $username." | tee -a "$LOG_FILE"
+
+    # Generate random password and store securely
+    password=$(openssl rand -base64 12)
+    echo "$username:$password" >> "$PASSWORD_FILE"
+    echo "Generated password for $username and stored in $PASSWORD_FILE." | tee -a "$LOG_FILE"
+
+    # Set permissions for home directory
+    chmod 700 "/home/$username"
+    chown "$username:$username" "/home/$username"
+
+    echo "Successfully configured user $username." | tee -a "$LOG_FILE"
+  fi
 
   # Add additional groups if provided
   IFS=',' read -ra user_groups <<< "$groups"
-  for group in "${user_group[0]}"; do
-      if ! getent group "$group" &>/dev/null; then
-          groupadd "$group"
-          echo "Created group $group." | tee -a "$LOG_FILE"
-      fi
+  for group in "${user_groups[@]}"; do
+    group=$(echo "$group" | xargs) # Trim whitespace
+    if ! getent group "$group" &>/dev/null; then
+      groupadd "$group"
+      echo "Created group $group." | tee -a "$LOG_FILE"
+    fi
+    if id -nG "$username" | grep -qw "$group"; then
+      echo "  - Belongs to group: $group" | tee -a "$LOG_FILE"
+    else
       usermod -aG "$group" "$username"
       echo "Added user $username to group $group." | tee -a "$LOG_FILE"
+      echo "  - Does NOT belong to group: $group" | tee -a "$LOG_FILE"
+    fi
   done
-
-  # Generate random password and store securely
-  password=$(openssl rand -base64 12)
-  echo "$username:$password" >> "$PASSWORD_FILE"
-  echo "Generated password for $username and stored in $PASSWORD_FILE." | tee -a "$LOG_FILE"
-
-  # Set permissions for home directory
-  chmod 700 "/home/$username"
-  chown "$username:$username" "/home/$username"
-
-  echo "Successfully configured user $username." | tee -a "$LOG_FILE"
 }
 
 # Main script starts here
@@ -58,7 +63,15 @@ if [ ! -f "$input_file" ]; then
 fi
 
 while IFS=';' read -r username groups; do
+  # Trim any leading/trailing whitespace from username and groups
+  username=$(echo "$username" | xargs)
+  groups=$(echo "$groups" | xargs)
+
+  if [ -n "$username" ]; then
     create_user "$username" "$groups"
+  else
+    echo "User '$username' does not exist" | tee -a "$LOG_FILE"
+  fi
 done < "$input_file"
 
 exit 0
